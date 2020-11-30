@@ -14,19 +14,18 @@ try:
 except NameError as e:
     xrange = range
 
-
 __all__ = ['Pika']
+
 
 class Pika(object):
 
-    def __init__(self, app = None):
+    def __init__(self, app=None):
         """
             Create the Flask Pika extension.
         """
         self.app = app
         if app is not None:
             self.init_app(app)
-
 
     def init_app(self, app):
         """
@@ -64,7 +63,6 @@ class Pika(object):
                 self.pool_queue.put(channel)
             self.__DEBUG("Pool params are %s" % pool_params)
 
-
     def __create_channel(self):
         """
             Create a connection and a channel based on pika params
@@ -74,7 +72,6 @@ class Pika(object):
         self.__DEBUG("Created AMQP Connection and Channel %s" % channel)
         self.__set_recycle_for_channel(channel)
         return channel
-
 
     def __destroy_channel(self, channel):
         """
@@ -87,8 +84,7 @@ class Pika(object):
         except Exception as e:
             self.__WARN("Failed to destroy channel cleanly %s" % e)
 
-
-    def __set_recycle_for_channel(self, channel, recycle_time = None):
+    def __set_recycle_for_channel(self, channel, recycle_time=None):
         """
             Set the next recycle time for a channel
         """
@@ -96,8 +92,6 @@ class Pika(object):
             recycle_time = (unix_time_millis_now() + (self.pool_recycle * 1000))
 
         self.channel_recycle_times[hash(channel)] = recycle_time
-
-
 
     def __remove_recycle_time_for_channel(self, channel):
         """
@@ -107,14 +101,12 @@ class Pika(object):
         if channel_hash in self.channel_recycle_times:
             del self.channel_recycle_times[channel_hash]
 
-
     def __should_recycle_channel(self, channel):
         """
             Determine if a channel should be recycled based on it's recycle time
         """
         recycle_time = self.channel_recycle_times[hash(channel)]
         return recycle_time < unix_time_millis_now()
-
 
     def channel(self):
         """
@@ -133,7 +125,8 @@ class Pika(object):
                 old_channel = ch
                 self.__destroy_channel(ch)
                 ch = self.__create_channel()
-                self.__DEBUG("Pika channel is too old, recycling channel %s and replacing it with %s"  % (old_channel, ch))
+                self.__DEBUG(
+                    "Pika channel is too old, recycling channel %s and replacing it with %s" % (old_channel, ch))
             else:
                 self.__set_recycle_for_channel(ch)
 
@@ -152,10 +145,10 @@ class Pika(object):
         # add support context manager
         def close():
             self.return_channel(ch)
+
         ch = ProxyContextManager(instance=ch, close_callback=close)
 
         return ch
-
 
     def return_channel(self, channel):
         """
@@ -172,10 +165,9 @@ class Pika(object):
             else:
                 self.return_broken_channel(channel)
 
-        #if not using pooling then just destroy the channel
+        # if not using pooling then just destroy the channel
         else:
             self.__destroy_channel(channel)
-
 
     def return_broken_channel(self, channel):
         """
@@ -189,7 +181,7 @@ class Pika(object):
             self.__destroy_channel(channel)
             self.pool_queue.put(self.__create_channel())
 
-        #if not using pooling then just destroy the channel
+        # if not using pooling then just destroy the channel
         else:
             self.__WARN("Pika channel returned in broken state %s" % channel)
             self.__destroy_channel(channel)
@@ -233,7 +225,7 @@ def unix_time(dt):
     """
     epoch = datetime.datetime.utcfromtimestamp(0)
     delta = dt - epoch
-    return int((delta.microseconds + (delta.seconds + delta.days * 24 * 3600) * 10**6) / 10**6)
+    return int((delta.microseconds + (delta.seconds + delta.days * 24 * 3600) * 10 ** 6) / 10 ** 6)
 
 
 def unix_time_millis(dt):
@@ -254,6 +246,7 @@ class ProxyContextManager(object):
     """
         working as proxy object or as context manager for object
     """
+
     def __init__(self, instance, close_callback=None):
         self.instance = instance
         self.close_callback = close_callback
@@ -272,4 +265,3 @@ class ProxyContextManager(object):
             self.close_callback()
         else:
             self.instance.close()
-
